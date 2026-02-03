@@ -1,37 +1,69 @@
-# Cloud/DevOps – Weekly Exercises (12 Weeks)
+# Cloud/DevOps Training (12 Weeks) – Exercise Briefs
 
 This repository contains the weekly exercise briefs for the Cloud/DevOps training.
 
-You do not need to clone this repository to use it. You can read each week directly on GitHub.
+Students do not need to clone this repository to use it. Each week can be opened and read directly on GitHub.
 
-## How to use this repo
+---
+
+## How this repo is organised
+
+Each week has its own folder:
+
+- `week-01/`
+- `week-02/`
+- ...
+- `week-12/`
+
+Inside each week folder you will typically find:
+
+- `README.md`  
+  The main exercise brief: scenario, tasks, deliverables, and what to submit.
+- `acceptance-criteria.md`  
+  The marking checklist: what must be present for a pass.
+- `resources.md`  
+  Optional links and reading.
+
+---
+
+## What students should do each week
+
 1. Open the folder for the current week (example: `week-02/`).
-2. Read the `README.md` inside that week.
+2. Read `week-02/README.md` fully.
 3. Complete the tasks.
-4. Submit your work in the **cloud-devops-submissions** repository (instructions are in that repo).
+4. Submit work in the **cloud-devops-submissions** repository:
+   - Create or use your personal branch
+   - Add your work under the correct week folder (example: `week-02/`)
+   - Open a Pull Request into `main`
 
-## Weekly structure
-Each week folder contains:
-- `README.md` – the exercise brief and tasks
-- `acceptance-criteria.md` – what you must show for it to be marked complete
-- `resources.md` – optional links and references
+Submission instructions are explained in detail in the submissions repository.
 
-## Weeks
-- Week 01 – (Title goes here)
-- Week 02 – (Title goes here)
-- Week 03 – (Title goes here)
-- Week 04 – (Title goes here)
-- Week 05 – (Title goes here)
-- Week 06 – (Title goes here)
-- Week 07 – (Title goes here)
-- Week 08 – (Title goes here)
-- Week 09 – (Title goes here)
-- Week 10 – (Title goes here)
-- Week 11 – (Title goes here)
-- Week 12 – (Title goes here)
+---
 
-## Support
-If something is unclear in an exercise brief, raise a question in the class channel and include:
-- the week number
-- what step you are stuck on
-- a screenshot or error message (if applicable)
+## What to submit (general rule)
+
+Each week will specify exact deliverables, but submissions commonly include:
+- notes or write-up (Markdown)
+- screenshots (PNG/JPG)
+- scripts (PowerShell, Bash)
+- code (when applicable)
+- command output or logs
+
+---
+
+## Support and questions
+
+When raising a question, include:
+- week number (example: Week 2)
+- step you are stuck on
+- screenshot or exact error message
+- what you already tried
+
+---
+
+## Trainer notes (internal)
+
+Suggested weekly publishing routine:
+- Update the week folder on `main`
+- Keep instructions stable once the week starts
+- If you must change something mid-week, add a short "Update" section at the top of that week README with the date and what changed
