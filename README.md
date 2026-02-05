@@ -1,4 +1,4 @@
-# Cloud/DevOps Training (12 Weeks) – Exercise Briefs
+# Exercise Briefs
 
 This repository contains the weekly exercise briefs for the Cloud/DevOps training.
 
@@ -29,7 +29,7 @@ Inside each week folder you will typically find:
 ## What students should do each week
 
 1. Open the folder for the current week (example: `week-02/`).
-2. Read `week-02/README.md` fully.
+2. Read `week-01/README.md` fully.
 3. Complete the tasks.
 4. Submit work in the **cloud-devops-submissions** repository:
    - Create or use your personal branch
