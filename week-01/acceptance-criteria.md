@@ -1,6 +1,3 @@
-`week-01/acceptance-criteria.md`
-
-```md
 # Week 1 – Acceptance Criteria (Marking Checklist)
 
 A Week 1 submission is marked complete when the following are present in the student PR.
