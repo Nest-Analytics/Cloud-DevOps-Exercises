@@ -1,56 +1,70 @@
-Deliverables (What to submit)
+# Week 1 Submission – Cloud/DevOps Masterclass
 
-Submit your Week 1 work in the cloud-devops-submissions repository under your personal branch in a folder named week-01/.
+This repository is used to collect Week 1 submissions.
 
-Your week-01/ folder must include:
+## What you must submit
 
-notes.md (short write-up)
+Submit your Week 1 work in the **cloud-devops-submissions** repository under **your personal branch**, inside a folder named:
 
-screenshots/ (evidence screenshots)
+`week-01/`
 
-scripts/ (optional, only if you created any scripts)
+Your `week-01/` folder must include:
 
-commands.txt (commands you ran)
+- `notes.md` (short write-up)
+- `commands.txt` (commands you ran)
+- `screenshots/` (evidence screenshots)
+- `scripts/` (optional, only if you created any scripts)
 
-Suggested structure:
+### Suggested structure
 
-week-01/
-  notes.md
-  commands.txt
-  screenshots/
-  scripts/
+week-01/  
+&nbsp;&nbsp;notes.md  
+&nbsp;&nbsp;commands.txt  
+&nbsp;&nbsp;screenshots/  
+&nbsp;&nbsp;scripts/  
 
+## Minimum evidence required
 
-Minimum evidence required:
+Your submission must include evidence of the following:
 
-terminal evidence of the mini exercise commands completing successfully
+### 1) Week 1 mini exercise (terminal evidence)
+- Terminal evidence that the mini exercise commands completed successfully.
 
-SSH connection evidence (connected to VM and ran whoami, hostname, pwd, ls)
+### 2) VM + SSH connection evidence
+- Evidence you connected to a Linux VM using SSH, and ran:
+  - `whoami`
+  - `hostname`
+  - `pwd`
+  - `ls`
 
-evidence that the repo was cloned on the VM (ls inside the repo folder)
+### 3) Repo clone evidence (on the VM)
+- Evidence the demo repo was cloned on the VM:
+  - `ls` inside the repo folder
+  - evidence you opened the README (`cat README.md`)
 
-Submission is complete when you push your work to your branch and open a PR into main.
+## How your submission is considered complete
 
-Checklist (Self-check before submitting)
+Submission is complete when:
 
-I can explain “cloud” in one sentence.
+1. You pushed your work to **your personal branch**
+2. You opened a **Pull Request (PR)** into `main`
 
-I can explain IaaS vs PaaS vs SaaS.
+## Checklist (self-check before submitting)
 
-I ran the Week 1 mini exercise commands and captured evidence.
-
-I connected to a Linux VM using SSH and ran the basic identity commands.
-
-I cloned the demo repo on the VM and opened its README.
-
-My submission is in week-01/ in my branch, and I opened a PR to main.
-
-
-# Acceptance Criteria
+- [ ] I can explain “cloud” in one sentence.
+- [ ] I can explain IaaS vs PaaS vs SaaS.
+- [ ] I ran the Week 1 mini exercise commands and captured evidence.
+- [ ] I connected to a Linux VM using SSH and ran the basic identity commands.
+- [ ] I cloned the demo repo on the VM and opened its README.
+- [ ] My submission is in `week-01/` in my branch, and I opened a PR to `main`.
 
 ---
 
-### `week-01/acceptance-criteria.md`
+# Acceptance Criteria
+
+Save the following file as:
+
+`week-01/acceptance-criteria.md`
 
 ```md
 # Week 1 – Acceptance Criteria (Marking Checklist)
