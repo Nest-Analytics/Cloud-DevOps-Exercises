@@ -1,7 +1,3 @@
-# Acceptance Criteria
-
-Save the following file as:
-
 `week-01/acceptance-criteria.md`
 
 ```md
