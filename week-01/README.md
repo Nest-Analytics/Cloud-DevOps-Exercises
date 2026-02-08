@@ -3,7 +3,7 @@
 This exercise is split into two parts:
 
 * **Part A (Local terminal):** get comfortable with basic Linux commands
-* **Part C (Cloud VM):** connect to a cloud VM with SSH and clone a demo app
+* **Part B (Cloud VM):** connect to a cloud VM with SSH and clone a demo app
 
 ---
 
@@ -17,7 +17,7 @@ Capture **screenshots or terminal output** showing:
 * `ls -l` showing `notes.txt`
 * `cat notes.txt` showing the exact content
 
-### Part C (Cloud VM)
+### Part B (Cloud VM)
 
 * Your **successful SSH connection**
 * Output of:
