@@ -74,7 +74,7 @@ cat notes.txt
 
 ---
 
-## Part C: First Cloud VM + Demo App
+## Part B: First Cloud VM + Demo App
 
 ### Step 1: What a VM is
 
@@ -113,7 +113,7 @@ ls
 ```bash
 sudo apt update
 sudo apt install -y git curl
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs
 node -v
 npm -v
@@ -125,8 +125,8 @@ npm -v
 
 ```bash
 cd ~
-git clone https://github.com/<your-github-username>/cloudtasks.git
-cd cloudtasks
+git clone https://github.com/helloSanmi/velo-learn.git
+cd velo-learn
 ls
 cat README.md
 ```
@@ -144,6 +144,13 @@ npm run dev
 
 ---
 
+### Step 6: Check the demo app on the browser
+
+Open your broswer and type http://<VM-PUBLIC-IP>:3000
+
+If properly deployed, you should be able to access the app
+
+---
 ## Notes / Common Fixes
 
 * **Permission error on key file (.pem):**
@@ -162,3 +169,4 @@ npm run dev
 * [ ] SSH connected into the VM and captured evidence
 * [ ] Installed Git + Node.js and captured `node -v` and `npm -v`
 * [ ] Cloned repo and captured `ls` and `cat README.md`
+* [ ] Working app on the broswer
