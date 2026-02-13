@@ -1,4 +1,3 @@
-````md
 # Week 2 – Student Assessment (Linux, PM2, Git)
 
 Your Week 2 practice is split into three parts: **Linux**, **PM2**, and **Git**. Keep it realistic and simple. Your goal is to build confidence with the terminal, basic process/service checks, and a standard workflow for running and managing an app.
