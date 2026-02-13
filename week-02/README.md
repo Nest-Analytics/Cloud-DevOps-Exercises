@@ -228,7 +228,3 @@ Include:
 * your Part 1 observations (systemctl + journalctl)
 * confirmation that PM2 is running the app
 * confirmation that you created a PR and merged it in your fork
-
-```
-::contentReference[oaicite:0]{index=0}
-```
