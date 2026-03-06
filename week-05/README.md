@@ -1,5 +1,5 @@
 
-# Exercise — CI/CD Pipelines with GitHub Actions & Azure
+# Exercise - CI/CD Pipelines with GitHub Actions & Azure
 
 ## Overview
 
