@@ -31,7 +31,7 @@ For each challenge, take a screenshot of the **GitHub Actions run** showing all 
 
 ### 3. Screenshots — live deployed app
 
-For each challenge, take a screenshot of your deployed app in the browser showing your personalised heading (the `<h1>` text you changed in `src/index.js`). The browser address bar must be visible so the URL is shown.
+For each challenge, take a screenshot of your deployed app in the browser. The browser address bar must be visible so the URL is shown.
 
 **Challenge 1** — Azure Web App URL (publish profile deploy)
 **Challenge 2** — Azure Web App URL (OIDC deploy, same app is fine)
@@ -50,12 +50,9 @@ Look at your Challenge 1 pipeline. If the `npm test` step fails, what happens to
 What is the difference between how Challenge 1 and Challenge 2 authenticate with Azure? Why is the OIDC approach considered more secure?
 
 **Question 3**
-In Challenge 3, what does the `needs: test` field do in the deploy job? What would happen if you removed it?
+In Challenge 3, why do we use PM2 instead of just running `npm run dev` directly on the VM?
 
 **Question 4**
-In Challenge 3, why do we use PM2 instead of just running `node src/index.js` directly on the VM?
-
-**Question 5**
 Look at the `permissions` block in Challenge 2. What do `id-token: write` and `contents: read` allow, and why would the pipeline fail without the `id-token: write` permission?
 
 ---
@@ -64,8 +61,7 @@ Look at the `permissions` block in Challenge 2. What do `id-token: write` and `c
 
 - [ ] All three `.yml` files have no remaining `TODO` placeholders
 - [ ] All three pipelines have at least one successful run in the Actions tab
-- [ ] `src/index.js` has been updated with your personalised heading
 - [ ] 3 Actions screenshots included (or linked) in your repo
 - [ ] 3 live app screenshots included (or linked) in your repo
-- [ ] `ANSWERS.md` file exists with all 5 questions answered
+- [ ] `ANSWERS.md` file exists with all 4 questions answered
 - [ ] Repository is set to public (or you have added your instructor as a collaborator)
