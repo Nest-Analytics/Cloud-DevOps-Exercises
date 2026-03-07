@@ -1,7 +1,5 @@
 # Resources
 
-## Official Documentation
-
 **GitHub Actions**
 - [GitHub Actions — Quickstart](https://docs.github.com/en/actions/quickstart) — best place to start if Actions is new to you
 - [Workflow syntax for GitHub Actions](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions) — full reference for every YAML key (`on`, `jobs`, `steps`, `needs`, `permissions`, etc.)
