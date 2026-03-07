@@ -1,6 +1,6 @@
 # Acceptance Criteria
 
-A Week 3 submission is marked complete when all items below are met.
+Submission is marked complete when all items below are met.
 
 ## Submission structure
 - Work is submitted in `cloud-devops-submissions` under `week-03/`.
