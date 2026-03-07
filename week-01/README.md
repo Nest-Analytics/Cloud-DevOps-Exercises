@@ -1,4 +1,4 @@
-# Week 1 Exercise: Linux Basics + First Cloud VM + Demo App
+# Exercise: Linux Basics + First Cloud VM + Demo App
 
 This exercise is split into two parts:
 
