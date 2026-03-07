@@ -1,4 +1,4 @@
-# Week 2 – Acceptance Criteria
+# Acceptance Criteria
 
 A submission is marked complete when all items below are met.
 
