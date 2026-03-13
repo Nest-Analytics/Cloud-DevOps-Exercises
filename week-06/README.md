@@ -18,8 +18,8 @@ The root configuration already sets up a Resource Group, Virtual Network, and Su
 **1. Clone the repository**
 
 ```bash
-git clone <repo-url>
-cd <repo-folder>
+git clone https://github.com/Nest-Analytics/terraform-lab.git
+cd terraform-lab
 ```
 
 **2. Open the module folder**
