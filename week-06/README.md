@@ -1,5 +1,5 @@
 
-# Terraform Lab
+# Exercise - Terraform
 
 This lab covers two things: writing a Terraform module to build a VM, and running Terraform through a GitHub Actions pipeline instead of your local machine.
 
