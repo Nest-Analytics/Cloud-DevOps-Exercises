@@ -51,7 +51,7 @@ COPY . .
 RUN npm install
 # ... (rest of your file)
 
-EXPOSE 3000
+EXPOSE 8080
 
 CMD ["npm", "start"]
 ```
@@ -81,7 +81,7 @@ You should see `gameapp` with tag `local` in the list.
 ### 4. Run the container
 
 ```bash
-docker run -p 3000:3000 gameapp:local
+docker run -p 3000:8080 gameapp:local
 ```
 
 Open your browser and go to:
