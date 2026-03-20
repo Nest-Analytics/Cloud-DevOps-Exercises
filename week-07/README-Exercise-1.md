@@ -42,14 +42,11 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# ... (previous steps)
 COPY package*.json ./
 
-# Move this UP so the files exist before npm install runs the 'postinstall' build
 COPY . .
 
 RUN npm install
-# ... (rest of your file)
 
 EXPOSE 8080
 
