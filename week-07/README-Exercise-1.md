@@ -38,19 +38,31 @@ This prevents your local `node_modules` from being copied into the image.
 In the root of the project, create a file named `Dockerfile` (no extension) with the following:
 
 ```dockerfile
-FROM node:20-alpine
+FROM node:20-alpine AS build
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
 
 COPY . .
+RUN npm run build
 
-RUN npm install
+FROM node:20-alpine AS runtime
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts
+
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/server.js ./server.js
 
 EXPOSE 8080
 
 CMD ["npm", "start"]
+
 ```
 
 ---
