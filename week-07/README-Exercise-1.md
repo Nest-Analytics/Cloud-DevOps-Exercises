@@ -38,15 +38,18 @@ This prevents your local `node_modules` from being copied into the image.
 In the root of the project, create a file named `Dockerfile` (no extension) with the following:
 
 ```dockerfile
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
+# ... (previous steps)
 COPY package*.json ./
 
-RUN npm install
-
+# Move this UP so the files exist before npm install runs the 'postinstall' build
 COPY . .
+
+RUN npm install
+# ... (rest of your file)
 
 EXPOSE 3000
 
