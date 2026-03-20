@@ -77,8 +77,8 @@ You should see `gameapp` with tag `local` in the list.
 
 ### 4. Run the container
 
-```bash
-docker run -p 3000:8080 gameapp:local
+```
+docker run --rm --name my-game-app -p 3000:8080 gameapp:local
 ```
 
 Open your browser and go to:
