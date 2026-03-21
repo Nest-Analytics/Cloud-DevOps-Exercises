@@ -72,32 +72,32 @@ Create the `terraform/` folder in your repository and write the following files.
 
 ```hcl
 variable "resource_group_name" {
-  description = "Name of the Azure resource group"
+  description = "The name of the resource group"
   type        = string
   default     = "rg-taskline"
 }
 
 variable "location" {
-  description = "Azure region"
+  description = "The Azure region to deploy the resources to"
   type        = string
-  default     = "EastUS"
-}
-
-variable "container_app_env_name" {
-  description = "Name of the Container Apps environment"
-  type        = string
-  default     = "env-taskline"
-}
-
-variable "container_app_name" {
-  description = "Name of the Container App"
-  type        = string
-  default     = "taskline"
+  default     = "westeurope"
 }
 
 variable "docker_image" {
-  description = "Full Docker image reference including tag"
+  description = "Docker image to deploy, e.g. hellosanmi/taskline:v1"
   type        = string
+}
+
+variable "api_key" {
+  description = "The API key to be used by the application"
+  type        = string
+  sensitive   = true
+}
+
+variable "db_password" {
+  description = "The database password"
+  type        = string
+  sensitive   = true
 }
 ```
 
@@ -106,6 +106,7 @@ variable "docker_image" {
 ### `terraform/main.tf`
 
 ```hcl
+# Define required providers and their versions
 terraform {
   required_providers {
     azurerm = {
@@ -115,40 +116,96 @@ terraform {
   }
 }
 
+# Configure the Azure provider
 provider "azurerm" {
-  features {}
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
 }
 
+# Create a Resource Group to hold all resources
 resource "azurerm_resource_group" "main" {
   name     = var.resource_group_name
   location = var.location
 }
 
-resource "azurerm_container_app_environment" "main" {
-  name                = var.container_app_env_name
+# Create a Log Analytics Workspace for storing container logs
+resource "azurerm_log_analytics_workspace" "main" {
+  name                = "analytics-taskline"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
 }
 
+# Create the Container App Environment (the underlying managed infrastructure)
+resource "azurerm_container_app_environment" "main" {
+  name                       = "env-taskline"
+  location                   = azurerm_resource_group.main.location
+  resource_group_name        = azurerm_resource_group.main.name
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
+}
+
+# Deploy the actual Container App with its container image and ingress settings
 resource "azurerm_container_app" "main" {
-  name                         = var.container_app_name
+  name                         = "taskline"
   container_app_environment_id = azurerm_container_app_environment.main.id
   resource_group_name          = azurerm_resource_group.main.name
   revision_mode                = "Single"
 
+  # Define sensitive values here
+  secret {
+    name  = "api-key"
+    value = var.api_key
+  }
+
+  secret {
+    name  = "db-password"
+    value = var.db_password
+  }
+
   template {
     container {
-      name   = var.container_app_name
+      name   = "taskline"
       image  = var.docker_image
       cpu    = 0.25
       memory = "0.5Gi"
+
+      # App environment variables
+      env {
+        name  = "APP_TITLE"
+        value = "Taskline"
+      }
+
+      env {
+        name  = "VITE_APP_TITLE"
+        value = "Taskline"
+      }
+
+      env {
+        name  = "PORT"
+        value = "3000"
+      }
+
+      # Reference the secret as an environment variable
+      env {
+        name        = "API_KEY"
+        secret_name = "api-key"
+      }
+
+      # Reference the new secret
+      env {
+        name        = "DB_PASSWORD"
+        secret_name = "db-password"
+      }
     }
   }
 
   ingress {
     external_enabled = true
     target_port      = 3000
-
     traffic_weight {
       percentage      = 100
       latest_revision = true
