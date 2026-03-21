@@ -1,4 +1,4 @@
-# Exercise 2 — Deploy the taskline App to Azure with Terraform and GitHub Actions - Docker + Terraform + YAML (CI/CD)
+# Exercise 2 — Deploy the Taskline App to Azure with Terraform and GitHub Actions | Docker + Terraform + YAML (CI/CD)
 
 ---
 
@@ -6,11 +6,26 @@
 
 This exercise brings together everything from the last three weeks. You will:
 
-1. Push your Docker image to Docker Hub
-2. Write Terraform to provision Azure infrastructure (resource group, Container Apps environment, Container App)
+1. Build and push your Docker image to Docker Hub — built for the correct platform
+2. Write Terraform to provision Azure infrastructure (resource group, Log Analytics, Container Apps environment, Container App)
 3. Write a GitHub Actions workflow that runs on every push — building the image, pushing it to Docker Hub, and applying your Terraform to deploy it to Azure
 
 When it is working, pushing a code change to your `main` branch should automatically result in a live, updated app at a public Azure URL.
+
+---
+
+## ⚠️ Platform Note — Read This First
+
+Azure Container Apps runs on **Linux AMD64** infrastructure. If you are on a Mac with Apple Silicon (M1, M2, M3), Docker builds ARM images by default — these will fail to start on Azure.
+
+**Always build with `--platform linux/amd64`** when building an image intended for Azure:
+
+```bash
+docker build --platform linux/amd64 -t your-dockerhub-username/taskline:v1 .
+docker push your-dockerhub-username/taskline:v1
+```
+
+The GitHub Actions pipeline handles this automatically (the `ubuntu-latest` runner is AMD64), but for any manual builds from your local machine, the `--platform` flag is required.
 
 ---
 
@@ -30,6 +45,8 @@ When it is working, pushing a code change to your `main` branch should automatic
 | `AZURE_CLIENT_SECRET` | Azure service principal client secret |
 | `AZURE_SUBSCRIPTION_ID` | Your Azure subscription ID |
 | `AZURE_TENANT_ID` | Your Azure tenant ID |
+| `API_KEY` | API key used by the taskline app |
+| `DB_PASSWORD` | Database password used by the taskline app |
 
 > **How to create an Azure service principal:**
 > ```bash
@@ -189,13 +206,12 @@ resource "azurerm_container_app" "main" {
         value = "3000"
       }
 
-      # Reference the secret as an environment variable
+      # Reference secrets as environment variables
       env {
         name        = "API_KEY"
         secret_name = "api-key"
       }
 
-      # Reference the new secret
       env {
         name        = "DB_PASSWORD"
         secret_name = "db-password"
@@ -269,6 +285,7 @@ jobs:
           context: .
           push: true
           tags: ${{ steps.meta.outputs.image_tag }}
+          platforms: linux/amd64
 
   deploy:
     name: Deploy to Azure with Terraform
@@ -297,6 +314,8 @@ jobs:
         run: |
           terraform plan \
             -var="docker_image=${{ needs.build-and-push.outputs.image_tag }}" \
+            -var="api_key=${{ secrets.API_KEY }}" \
+            -var="db_password=${{ secrets.DB_PASSWORD }}" \
             -out=tfplan
 
       - name: Terraform Apply
@@ -308,15 +327,17 @@ jobs:
         run: terraform output app_url
 ```
 
+> **Note:** The pipeline builds with `platforms: linux/amd64` — this ensures the image runs correctly on Azure regardless of what machine triggered the push.
+
 ---
 
 ## How It Works — End to End
 
 When you push to `main`:
 
-1. **build-and-push job** checks out your code, logs in to Docker Hub, builds the image tagged with the git commit SHA, and pushes it
-2. **deploy job** runs after — it authenticates to Azure using your service principal secrets, runs `terraform init` and `terraform plan` with the new image tag passed as a variable, then applies the plan
-3. Terraform provisions (or updates) the resource group, Container Apps environment, and Container App pointing at the new image
+1. **build-and-push job** checks out your code, logs in to Docker Hub, builds the image for `linux/amd64` tagged with the git commit SHA, and pushes it
+2. **deploy job** runs after — it authenticates to Azure using your service principal secrets, runs `terraform init` and `terraform plan` with the new image tag and app secrets passed as variables, then applies the plan
+3. Terraform provisions (or updates) the resource group, Log Analytics workspace, Container Apps environment, and Container App pointing at the new image
 4. The workflow prints the public URL as the final step
 
 ---
@@ -328,7 +349,7 @@ After the workflow completes:
 1. Go to your GitHub repository → **Actions** tab
 2. Click the latest workflow run and confirm both jobs show green ticks
 3. In the **deploy** job logs, find the `Print app URL` step — copy the URL
-4. Open the URL in your browser — the taskline should be live
+4. Open the URL in your browser — the taskline app should be live
 
 ---
 
@@ -362,9 +383,11 @@ Also include in your repository root a file named `SUBMISSION.md` with:
 
 ## Hints
 
-- If the **build-and-push** job fails at login, double-check that `DOCKERHUB_TOKEN` is an access token, not your account password. Generate a new one at Docker Hub → Account Settings → Security → New Access Token.
-- If the **deploy** job fails at `terraform init`, make sure the `working-directory: terraform` is set correctly on every Terraform step.
+- **On a Mac with Apple Silicon?** Always build locally with `--platform linux/amd64`. Skipping this flag means your image is ARM64 and will not start on Azure.
+- If the **build-and-push** job fails at login, double-check that `DOCKERHUB_TOKEN` is an access token, not your account password. Generate one at Docker Hub → Account Settings → Security → New Access Token.
+- If the **deploy** job fails at `terraform init`, make sure `working-directory: terraform` is set on every Terraform step, not just the first.
 - If Terraform fails with an authentication error, check that all four `ARM_*` environment variables are set and match the service principal output exactly.
+- If Terraform fails with a variable error for `api_key` or `db_password`, make sure those secrets are added to GitHub Secrets and the `-var` flags are present in the plan step.
 - The first time the pipeline runs, Terraform creates all resources from scratch — this takes 2–3 minutes. Subsequent runs update only what has changed.
 - `revision_mode = "Single"` means Terraform replaces the running revision when the image changes. This is correct for this exercise.
 - Do not commit secrets into your repository. All credentials must be in GitHub Secrets, never in `.yml` or `.tf` files.
