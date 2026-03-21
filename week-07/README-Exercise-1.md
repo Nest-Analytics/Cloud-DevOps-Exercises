@@ -11,7 +11,7 @@ In this exercise you will write a Dockerfile for the game app, build it into a c
 ## What You Need
 
 - Docker Desktop installed and running
-- The game app source code here - https://....
+- The app source code here - https://....
 - A terminal
 
 ---
