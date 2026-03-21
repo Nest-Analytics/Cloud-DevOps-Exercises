@@ -1,4 +1,4 @@
-# Exercise 1 — Containerise the Game App - Docker
+# Exercise 1 — Containerise the Taskline App - Docker
 
 ---
 
