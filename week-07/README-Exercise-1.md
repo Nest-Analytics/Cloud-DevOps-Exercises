@@ -4,7 +4,7 @@
 
 ## Overview
 
-In this exercise you will write a Dockerfile for the game app, build it into a container image, and run it locally. By the end, your app should be reachable at `http://localhost:3000` — not from Node running on your machine, but from inside a container.
+In this exercise you will write a Dockerfile for the taskline app, build it into a container image, and run it locally. By the end, your app should be reachable at `http://localhost:3000` — not from Node running on your machine, but from inside a container.
 
 ---
 
@@ -72,7 +72,7 @@ CMD ["npm", "start"]
 From the project root directory, run:
 
 ```bash
-docker build -t gameapp:local .
+docker build -t tasklineapp:local .
 ```
 
 You should see Docker executing each step. The final line should read **Successfully built**.
@@ -83,14 +83,14 @@ Verify the image exists:
 docker images
 ```
 
-You should see `gameapp` with tag `local` in the list.
+You should see `tasklineapp` with tag `local` in the list.
 
 ---
 
 ### 4. Run the container
 
 ```
-docker run --rm --name my-game-app -p 3000:8080 gameapp:local
+docker run --rm --name my-taskline-app -p 3000:8080 tasklineapp:local
 ```
 
 Open your browser and go to:
@@ -99,7 +99,7 @@ Open your browser and go to:
 http://localhost:3000
 ```
 
-The game app should load and be fully playable.
+The taskline app should load and be fully playable.
 
 ---
 
@@ -118,6 +118,6 @@ Push the following to your GitHub repository and submit the screenshots
 ## Hints
 
 - Make sure Docker Desktop is running before you use any `docker` command — you'll get a connection error if the daemon isn't up.
-- If you see `port is already allocated`, something else is using port 3000. Either stop that process, or change the host port: `docker run -p 3001:3000 gameapp:local` and visit `localhost:3001`.
+- If you see `port is already allocated`, something else is using port 3000. Either stop that process, or change the host port: `docker run -p 3001:3000 tasklineapp:local` and visit `localhost:3001`.
 - If `npm install` fails during the build, check that your `package.json` is valid JSON and all dependency names are spelled correctly.
 - Run `docker ps` to see containers that are currently running. Run `docker ps -a` to see all containers including stopped ones.
