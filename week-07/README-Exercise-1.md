@@ -11,7 +11,7 @@ In this exercise you will write a Dockerfile for the taskline app, build it into
 ## What You Need
 
 - Docker Desktop installed and running
-- The app source code here - https://....
+- The app source code here - https://github.com/Nest-Analytics/taskline-app.git
 - A terminal
 
 ---
