@@ -1,4 +1,4 @@
-# Exercise 2 — Deploy the Game App to Azure with Terraform and GitHub Actions - Docker + Terraform + YAML (CI/CD)
+# Exercise 2 — Deploy the taskline App to Azure with Terraform and GitHub Actions - Docker + Terraform + YAML (CI/CD)
 
 ---
 
@@ -19,7 +19,7 @@ When it is working, pushing a code change to your `main` branch should automatic
 - Exercise 1 completed (working Dockerfile in the repo)
 - A Docker Hub account — [hub.docker.com](https://hub.docker.com)
 - An Azure account with an active subscription
-- A GitHub repository for the game app
+- A GitHub repository for the taskline app
 - The following secrets configured in your GitHub repository settings (Settings → Secrets and variables → Actions):
 
 | Secret name | What it contains |
@@ -34,7 +34,7 @@ When it is working, pushing a code change to your `main` branch should automatic
 > **How to create an Azure service principal:**
 > ```bash
 > az ad sp create-for-rbac \
->   --name "sp-gameapp-deploy" \
+>   --name "sp-taskline-deploy" \
 >   --role Contributor \
 >   --scopes /subscriptions/YOUR_SUBSCRIPTION_ID \
 >   --sdk-auth
@@ -48,8 +48,8 @@ When it is working, pushing a code change to your `main` branch should automatic
 Your repository should look like this when complete:
 
 ```
-game-app/
-├── src/                          ← game app source (provided)
+taskline-app/
+├── src/                          ← taskline app source (provided)
 ├── package.json
 ├── Dockerfile                    ← from Exercise 1
 ├── .dockerignore                 ← from Exercise 1
@@ -74,7 +74,7 @@ Create the `terraform/` folder in your repository and write the following files.
 variable "resource_group_name" {
   description = "Name of the Azure resource group"
   type        = string
-  default     = "rg-gameapp"
+  default     = "rg-taskline"
 }
 
 variable "location" {
@@ -86,13 +86,13 @@ variable "location" {
 variable "container_app_env_name" {
   description = "Name of the Container Apps environment"
   type        = string
-  default     = "env-gameapp"
+  default     = "env-taskline"
 }
 
 variable "container_app_name" {
   description = "Name of the Container App"
   type        = string
-  default     = "gameapp"
+  default     = "taskline"
 }
 
 variable "docker_image" {
@@ -163,7 +163,7 @@ resource "azurerm_container_app" "main" {
 
 ```hcl
 output "app_url" {
-  description = "Public URL of the deployed game app"
+  description = "Public URL of the deployed taskline app"
   value       = "https://${azurerm_container_app.main.ingress[0].fqdn}"
 }
 ```
@@ -203,7 +203,7 @@ jobs:
       - name: Generate image tag
         id: meta
         run: |
-          IMAGE_TAG="${{ secrets.DOCKERHUB_USERNAME }}/gameapp:${{ github.sha }}"
+          IMAGE_TAG="${{ secrets.DOCKERHUB_USERNAME }}/taskline:${{ github.sha }}"
           echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
 
       - name: Build and push image
@@ -271,7 +271,7 @@ After the workflow completes:
 1. Go to your GitHub repository → **Actions** tab
 2. Click the latest workflow run and confirm both jobs show green ticks
 3. In the **deploy** job logs, find the `Print app URL` step — copy the URL
-4. Open the URL in your browser — the game should be live
+4. Open the URL in your browser — the taskline should be live
 
 ---
 
