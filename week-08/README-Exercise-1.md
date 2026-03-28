@@ -58,7 +58,7 @@ kubectl get nodes                 # should show STATUS: Ready
 From the root of your project (where your `Dockerfile` lives):
 
 ```bash
-docker build --platform linux/amd64 -t demoapp:v1 .
+docker build --platform linux/amd64 -t tasklineapp:v1 .
 ```
 
 > **Why `--platform linux/amd64`?**
@@ -71,10 +71,10 @@ docker build --platform linux/amd64 -t demoapp:v1 .
 minikube has its own Docker daemon separate from your local one. You must explicitly load the image into it — otherwise Kubernetes will try to pull it from the internet and fail.
 
 ```bash
-minikube image load demoapp:v1
+minikube image load tasklineapp:v1
 
 # Confirm minikube can see it
-minikube image ls | grep demoapp
+minikube image ls | grep tasklineapp
 ```
 
 ---
@@ -89,22 +89,22 @@ Create a folder called `k8s/` in your project root. Inside it, create two files.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: demoapp
+  name: tasklineapp
   labels:
-    app: demoapp
+    app: tasklineapp
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: demoapp
+      app: tasklineapp
   template:
     metadata:
       labels:
-        app: demoapp
+        app: tasklineapp
     spec:
       containers:
-        - name: demoapp
-          image: demoapp:v1
+        - name: tasklineapp
+          image: tasklineapp:v1
           imagePullPolicy: Never
           ports:
             - containerPort: 3000
@@ -125,11 +125,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: demoapp-service
+  name: tasklineapp-service
 spec:
   type: NodePort
   selector:
-    app: demoapp
+    app: tasklineapp
   ports:
     - protocol: TCP
       port: 80
@@ -156,7 +156,7 @@ kubectl get pods
 
 Both pods should show `STATUS: Running` and `READY: 1/1`. If they show `ContainerCreating`, wait 20–30 seconds and run again.
 
-If a pod shows `ImagePullBackOff`, you missed Step 3. Run `minikube image load demoapp:v1` and then delete the failing pod to force a restart:
+If a pod shows `ImagePullBackOff`, you missed Step 3. Run `minikube image load tasklineapp:v1` and then delete the failing pod to force a restart:
 
 ```bash
 kubectl delete pod <pod-name>
@@ -167,7 +167,7 @@ kubectl delete pod <pod-name>
 ### Step 7 — Open the App in Your Browser
 
 ```bash
-minikube service demoapp-service
+minikube service tasklineapp-service
 ```
 
 This opens the app in your default browser. The URL will be something like `http://127.0.0.1:XXXXX`. The app should load and be fully functional.
