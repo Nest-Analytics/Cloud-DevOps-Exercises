@@ -59,7 +59,7 @@ RUN npm ci --omit=dev --ignore-scripts
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/server.js ./server.js
 
-EXPOSE 8080
+EXPOSE 3000
 
 CMD ["npm", "start"]
 
@@ -90,7 +90,7 @@ You should see `tasklineapp` with tag `local` in the list.
 ### 4. Run the container
 
 ```
-docker run --rm --name my-taskline-app -p 3000:8080 tasklineapp:local
+docker run --rm --name my-taskline-app -p 3000:3000 tasklineapp:local
 ```
 
 Open your browser and go to:
