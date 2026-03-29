@@ -28,6 +28,7 @@ When it is working, pushing a code change to `main` automatically results in a l
 | `DOCKERHUB_USERNAME` | Docker Hub username — required if using Docker Hub or GHCR |
 | `DOCKERHUB_TOKEN` | Docker Hub access token — required if using Docker Hub |
 | `GHCR_TOKEN` | GitHub PAT with `read/write:packages` — required if using GHCR |
+| `REGISTRY` | ghcr -  define GitHub variable if using the variable or remove the condition |
 | `AZURE_CLIENT_ID` | Azure service principal client ID |
 | `AZURE_CLIENT_SECRET` | Azure service principal client secret |
 | `AZURE_SUBSCRIPTION_ID` | Your Azure subscription ID |
