@@ -181,6 +181,8 @@ variable "acr_name" {
 }
 ```
 
+You must create that storage account/container once in Azure first, and fill in this details in the backend "azurerm"
+
 ### `terraform/main.tf`
 
 ```hcl
@@ -190,6 +192,12 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 3.0"
     }
+  }
+  backend "azurerm" {
+    resource_group_name  = "YOUR_TFSTATE_RG"
+    storage_account_name = "YOURTFSTATESTORAGE"
+    container_name       = "tfstate"
+    key                  = "tasklineapp.terraform.tfstate"
   }
 }
 
