@@ -1,18 +1,18 @@
-# Exercise 1 — Kubernetes Secrets on minikube - Security & IAM: Local Secrets
+# Exercise 1 — Kubernetes Secrets on minikube | Security & IAM: Local Secrets
 
 ---
 
 ## Overview
 
-You will create a Kubernetes Secret containing the Taskline app's config values, deploy the app to minikube using the provided manifests, and confirm it runs. You will then delete the secret and redeploy to see what breaks.
+You will create a Kubernetes Secret containing the Taskline app's config values, deploy the app to minikube using the provided manifests, and confirm it runs correctly. You will then delete the secret and redeploy to observe what breaks — and why.
 
 ---
 
 ## What You Need
 
 - minikube running: `minikube start --driver=docker`
-- kubectl connected to minikube: `kubectl config current-context` should print `minikube`
-- The Taskline app image built and loaded into minikube
+- kubectl pointing at minikube: `kubectl config current-context` should print `minikube`
+- The Taskline app source code
 
 ---
 
@@ -20,7 +20,9 @@ You will create a Kubernetes Secret containing the Taskline app's config values,
 
 ```bash
 eval $(minikube docker-env)
+
 docker build -t tasklineapp:latest .
+
 docker images | grep tasklineapp
 ```
 
@@ -28,26 +30,26 @@ docker images | grep tasklineapp
 
 ## Step 2 — Create the Kubernetes Secret
 
-Create the secret with all the values the app needs:
+Create the secret with all the values the app needs. Fill in your own values where indicated:
 
 ```bash
 kubectl create secret generic taskline-secrets \
   --from-literal=APP_TITLE='Taskline' \
-  --from-literal=APP_USERNAME='ayo' \
-  --from-literal=APP_PASSWORD='Password' \
-  --from-literal=API='newrwrii3eururRJ9JRNnrj3964ey75y38uwhbe' \
+  --from-literal=APP_USERNAME='<your-username>' \
+  --from-literal=APP_PASSWORD='<your-password>' \
+  --from-literal=API='<your-api-key>' \
   --from-literal=VITE_APP_TITLE='Taskline' \
-  --from-literal=PORT='5000'
+  --from-literal=PORT='3000'
 ```
 
-Confirm it exists:
+Confirm the secret exists — keys are shown, values are not:
 
 ```bash
 kubectl get secret taskline-secrets
 kubectl describe secret taskline-secrets
 ```
 
-Note: `describe` shows the keys but never the values. To prove base64 is not encryption:
+To prove that base64 is not encryption:
 
 ```bash
 kubectl get secret taskline-secrets \
@@ -171,7 +173,7 @@ kubectl exec -it \
   -- sh -c 'echo APP_TITLE=$APP_TITLE && echo PORT=$PORT'
 ```
 
-Open the app:
+Open the app in the browser:
 
 ```bash
 minikube service tasklineapp-service
@@ -189,15 +191,16 @@ kubectl rollout restart deployment/tasklineapp
 kubectl get pods -w
 ```
 
-The new pods will enter `CrashLoopBackOff` or `CreateContainerConfigError` because the `secretKeyRef` keys no longer exist. Check why:
+The new pods will enter `CrashLoopBackOff` or `CreateContainerConfigError`. Inspect the reason:
 
 ```bash
-kubectl describe pod $(kubectl get pod -l app=tasklineapp -o jsonpath='{.items[0].metadata.name}')
+kubectl describe pod \
+  $(kubectl get pod -l app=tasklineapp -o jsonpath='{.items[0].metadata.name}')
 ```
 
-Look at the `Events` section — it will tell you exactly which secret key is missing.
+Look at the `Events` section — it will name exactly which secret key is missing. Take a screenshot of this error state.
 
-Take a screenshot of this error state. Then recreate the secret (Step 2) and restart the deployment to restore it:
+Recreate the secret (Step 2) and restart the deployment to restore:
 
 ```bash
 kubectl rollout restart deployment/tasklineapp
@@ -207,13 +210,13 @@ kubectl rollout restart deployment/tasklineapp
 
 ## Submitting Your Work
 
-See `SUBMISSION.md` for what to include.
+See `SUBMISSION.md` for what to include and how to submit.
 
 ---
 
 ## Hints
 
-- The secret must exist **before** pods start. If you apply the deployment first, the pods will fail — create the secret first or restart after creating it.
-- `CreateContainerConfigError` means a `secretKeyRef` key is missing or the secret name is wrong. `CrashLoopBackOff` means the container started but the app crashed. `describe pod` tells you which.
-- `imagePullPolicy: Never` must stay in the manifest — minikube will not find the image on Docker Hub.
+- Create the secret **before** applying the deployment. If pods start before the secret exists they will fail — recreate and restart.
+- `CreateContainerConfigError` means a `secretKeyRef` key name doesn't match what's in the secret. `CrashLoopBackOff` means the container started but the app crashed. `kubectl describe pod` tells you which.
+- `imagePullPolicy: Never` must stay in the local manifest — minikube won't find the image on any registry.
 - To revert Docker to your local daemon after the session: `eval $(minikube docker-env -u)`
