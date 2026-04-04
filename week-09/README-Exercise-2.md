@@ -4,7 +4,7 @@
 
 ## Overview
 
-This exercise builds directly on Week 8 (Kubernetes on AKS). You will:
+This exercise builds directly on Week 9 (Kubernetes on AKS). You will:
 
 1. Write the Dockerfile and build the production image
 2. Add Azure Key Vault to your Terraform configuration
@@ -19,7 +19,7 @@ The non-sensitive values (`APP_TITLE`, `VITE_APP_TITLE`, `PORT`) are handled as 
 ## What You Need
 
 - Exercise 1 completed — Kubernetes Secrets working on minikube
-- The AKS cluster and Terraform state from Week 9 exercises still in place
+- The AKS cluster and Terraform state from Week 8 exercises still in place
 - Azure account with an active subscription, Azure CLI authenticated (`az login`)
 - Terraform installed
 
@@ -66,7 +66,11 @@ This is a multi-stage build. The `build` stage compiles the app; the `runtime` s
 Confirm it builds locally before continuing:
 
 ```bash
-docker build -t tasklineapp:local .
+# Always build with --platform linux/amd64.
+# AKS nodes run Linux AMD64. On a Mac with Apple Silicon (M1/M2/M3),
+# Docker builds ARM images by default — these will fail to start on AKS.
+docker build --platform linux/amd64 -t tasklineapp:local .
+
 docker images | grep tasklineapp
 ```
 
