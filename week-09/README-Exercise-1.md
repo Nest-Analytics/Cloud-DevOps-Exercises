@@ -21,7 +21,9 @@ You will create a Kubernetes Secret containing the Taskline app's config values,
 ```bash
 eval $(minikube docker-env)
 
-docker build -t tasklineapp:latest .
+# --platform linux/amd64 ensures the image runs correctly on the cluster node.
+# On a Mac with Apple Silicon (M1/M2/M3), Docker defaults to ARM — always set this flag.
+docker build --platform linux/amd64 -t tasklineapp:latest .
 
 docker images | grep tasklineapp
 ```
