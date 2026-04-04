@@ -382,7 +382,7 @@ In the Portal: Key Vault → **Secrets** — confirm `APP-PASSWORD`, `APP-USERNA
 
 ## Submitting Your Work
 
-See `SUBMISSION.md` for what to include and how to submit.
+See `Acceptance-Exercise-2.md` for what to include and how to submit.
 
 ---
 
