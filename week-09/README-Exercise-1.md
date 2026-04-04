@@ -212,7 +212,7 @@ kubectl rollout restart deployment/tasklineapp
 
 ## Submitting Your Work
 
-See `SUBMISSION.md` for what to include and how to submit.
+See `Acceptance-Exercise-1.md` for what to include and how to submit.
 
 ---
 
