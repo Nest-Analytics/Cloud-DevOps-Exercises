@@ -4,7 +4,7 @@
 
 ## Overview
 
-This exercise builds directly on Week 9 (Kubernetes on AKS). You will:
+This exercise builds directly on Week 8 (Kubernetes on AKS). You will:
 
 1. Write the Dockerfile and build the production image
 2. Add Azure Key Vault to your Terraform configuration
