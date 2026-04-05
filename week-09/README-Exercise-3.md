@@ -6,12 +6,12 @@
 
 This exercise is the full integration of everything across Weeks 7–9: Docker (containerised image), Terraform (infrastructure as code), Kubernetes (AKS manifests from Week 8), GitHub Actions (CI/CD pipeline), and now Key Vault (secrets managed securely). You are not starting from scratch — you are extending the working AKS deployment from Week 8 to handle secrets properly.
 
-You will wire the GitHub Actions pipeline to inject secrets from GitHub Secrets into AKS as a Kubernetes Secret on every deployment. The complete flow on every push to `main`:
+You will wire the GitHub Actions pipeline to inject secrets into AKS as a Kubernetes Secret on every deployment. The complete flow on every push to `main`:
 
 ```
 GitHub Actions
   → Terraform provisions Key Vault + stores secrets
-  → Deploy job reads secrets from Key Vault
+  → Deploy job reads secrets from GitHub Secrets into runner
   → kubectl creates Kubernetes Secret in AKS
   → Pod reads env vars from Kubernetes Secret
   → App starts with all config values present
@@ -24,8 +24,44 @@ No secret value touches any file, manifest, or source control at any point.
 ## Prerequisites
 
 - Exercises 1 and 2 completed
-- GitHub Actions pipeline from Week 8/9 working (three-job structure)
+- GitHub Actions pipeline from Week 8 working (three-job structure)
 - Key Vault provisioned with `APP-PASSWORD`, `APP-USERNAME`, `API-KEY` stored
+
+---
+
+## GitHub Secrets and Variables
+
+Go to your repository → **Settings → Secrets and variables → Actions**.
+
+### Secrets (sensitive — always masked in logs)
+
+| Secret name | What it contains |
+|---|---|
+| `AZURE_CLIENT_ID` | Service principal client ID |
+| `AZURE_CLIENT_SECRET` | Service principal client secret |
+| `AZURE_SUBSCRIPTION_ID` | Your Azure subscription ID |
+| `AZURE_TENANT_ID` | Your Azure tenant ID |
+| `TF_STATE_RESOURCE_GROUP` | Resource group containing the Terraform state storage account |
+| `TF_STATE_STORAGE_ACCOUNT` | Storage account name for Terraform remote state |
+| `TF_STATE_CONTAINER` | Blob container name for Terraform state, e.g. `tfstate1` |
+| `GHCR_TOKEN` | GitHub PAT with `read/write:packages` |
+| `APP_USERNAME` | Taskline app username |
+| `APP_PASSWORD` | Taskline app password |
+| `API` | Taskline API key |
+
+### Variables (non-sensitive — visible in logs, that is fine)
+
+Go to the **Variables tab**.
+
+| Variable name | What it contains |
+|---|---|
+| `TF_VAR_resource_group_name` | Azure resource group, e.g. `learn-rg` |
+| `TF_VAR_aks_cluster_name` | AKS cluster name, e.g. `aks-taskline-learn` |
+| `TF_VAR_location` | Azure region, e.g. `westeurope` |
+| `TF_VAR_key_vault_name` | Key Vault name, e.g. `kv-tasklineapp` |
+| `APP_TITLE` | `Taskline` |
+| `VITE_APP_TITLE` | `Taskline` |
+| `PORT` | `3000` |
 
 ---
 
@@ -50,10 +86,12 @@ spec:
       labels:
         app: tasklineapp
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: tasklineapp
-          # Replace with your actual registry path — pipeline will substitute the SHA tag
-          image: YOUR_REGISTRY_PATH:v1
+          # Placeholder — replaced by the pipeline sed command at deploy time
+          image: REGISTRY_IMAGE_PLACEHOLDER
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -182,7 +220,11 @@ jobs:
       ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      # These are picked up automatically as Terraform variable values
+      # TF_VAR_* are picked up automatically as Terraform variable values
+      TF_VAR_resource_group_name: ${{ vars.TF_VAR_resource_group_name }}
+      TF_VAR_location: ${{ vars.TF_VAR_location }}
+      TF_VAR_aks_cluster_name: ${{ vars.TF_VAR_aks_cluster_name }}
+      TF_VAR_key_vault_name: ${{ vars.TF_VAR_key_vault_name }}
       TF_VAR_app_username: ${{ secrets.APP_USERNAME }}
       TF_VAR_app_password: ${{ secrets.APP_PASSWORD }}
       TF_VAR_api_key: ${{ secrets.API }}
@@ -197,10 +239,11 @@ jobs:
       - name: Terraform Init
         working-directory: terraform
         run: |
+          # All backend details come from GitHub Secrets — nothing hardcoded
           terraform init -input=false \
             -backend-config="resource_group_name=${{ secrets.TF_STATE_RESOURCE_GROUP }}" \
             -backend-config="storage_account_name=${{ secrets.TF_STATE_STORAGE_ACCOUNT }}" \
-            -backend-config="container_name=tfstate1" \
+            -backend-config="container_name=${{ secrets.TF_STATE_CONTAINER }}" \
             -backend-config="key=tasklineapp.terraform.tfstate"
 
       - name: Terraform Plan
@@ -216,20 +259,6 @@ jobs:
     name: Deploy to AKS
     runs-on: ubuntu-latest
     needs: [build-and-push, terraform]
-
-    env:
-      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      # Non-sensitive config from GitHub Variables
-      APP_TITLE: ${{ vars.APP_TITLE }}
-      VITE_APP_TITLE: ${{ vars.VITE_APP_TITLE }}
-      PORT: ${{ vars.PORT }}
-      # Sensitive values from GitHub Secrets
-      APP_USERNAME: ${{ secrets.APP_USERNAME }}
-      APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
-      API: ${{ secrets.API }}
 
     steps:
       - name: Checkout code
@@ -248,25 +277,37 @@ jobs:
 
       - name: Get AKS credentials
         run: |
+          # Resource group and cluster name come from GitHub Variables — no hardcoding
           az aks get-credentials \
-            --resource-group learn-rg \
-            --name aks-taskline-learn \
+            --resource-group ${{ vars.TF_VAR_resource_group_name }} \
+            --name ${{ vars.TF_VAR_aks_cluster_name }} \
             --overwrite-existing
+
+      - name: Create GHCR image pull secret
+        run: |
+          kubectl create secret docker-registry ghcr-secret \
+            --docker-server=ghcr.io \
+            --docker-username=${{ github.actor }} \
+            --docker-password=${{ secrets.GHCR_TOKEN }} \
+            --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Update image in deployment manifest
         run: |
-          sed -i "s|YOUR_REGISTRY_PATH:v1|${{ needs.build-and-push.outputs.image_tag }}|g" \
+          # Replace placeholder with the real SHA-tagged image from Job 1
+          sed -i "s|REGISTRY_IMAGE_PLACEHOLDER|${{ needs.build-and-push.outputs.image_tag }}|g" \
             k8s/aks/deployment.yaml
 
       - name: Create or update Kubernetes secret
         run: |
+          # Values come from GitHub Secrets and Variables — nothing hardcoded
+          # Idempotent — safe to run on every push
           kubectl create secret generic taskline-secrets \
-            --from-literal=APP_TITLE="${APP_TITLE:-Taskline}" \
-            --from-literal=APP_USERNAME="${APP_USERNAME}" \
-            --from-literal=APP_PASSWORD="${APP_PASSWORD}" \
-            --from-literal=API="${API}" \
-            --from-literal=VITE_APP_TITLE="${VITE_APP_TITLE:-Taskline}" \
-            --from-literal=PORT="${PORT:-3000}" \
+            --from-literal=APP_TITLE="${{ vars.APP_TITLE }}" \
+            --from-literal=APP_USERNAME="${{ secrets.APP_USERNAME }}" \
+            --from-literal=APP_PASSWORD="${{ secrets.APP_PASSWORD }}" \
+            --from-literal=API="${{ secrets.API }}" \
+            --from-literal=VITE_APP_TITLE="${{ vars.VITE_APP_TITLE }}" \
+            --from-literal=PORT="${{ vars.PORT }}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Apply Kubernetes manifests
@@ -299,8 +340,8 @@ jobs:
 | Step | What happens | Where secrets live |
 |---|---|---|
 | Terraform job | Creates Key Vault, stores `APP-PASSWORD`, `APP-USERNAME`, `API-KEY` from `TF_VAR_*` env vars | Azure Key Vault |
-| Deploy job | Reads `APP_USERNAME`, `APP_PASSWORD`, `API` from GitHub Secrets into runner environment | Runner memory only |
-| `kubectl create secret` | Idempotent create/update of `taskline-secrets` in AKS from runner env vars | Kubernetes etcd |
+| Deploy job | Reads `APP_USERNAME`, `APP_PASSWORD`, `API` from GitHub Secrets directly | Runner memory only |
+| `kubectl create secret` | Idempotent create/update of `taskline-secrets` in AKS | Kubernetes etcd |
 | Pod startup | Reads env vars from `taskline-secrets` via `secretKeyRef` | Pod memory |
 | App runtime | Uses values from environment — never reads from a file or hardcoded string | Process memory |
 
@@ -309,8 +350,6 @@ Nothing sensitive is in any committed file at any point in this chain.
 ---
 
 ## Dockerfile
-
-The multi-stage Dockerfile is already provided. It uses `--platform=$BUILDPLATFORM` for the build stage and a slim runtime image. The pipeline builds with `platforms: linux/amd64` to ensure compatibility with AKS nodes.
 
 ```dockerfile
 FROM --platform=$BUILDPLATFORM node:24-bookworm-slim AS build
@@ -339,24 +378,24 @@ CMD ["npm", "start"]
 
 ## Verifying It Worked
 
-1. Go to your repository → **Actions** tab
-2. Confirm all three jobs show green ticks
-3. In the **deploy** job logs, find the `Get external IP` step — copy the IP
-4. Open `http://<EXTERNAL-IP>` — the app should be live and logged in with your `APP_USERNAME`
+1. Repository → **Actions** tab → latest workflow run → all three jobs green
+2. **deploy** job logs → `Get external IP` step → copy the IP
+3. Open `http://<EXTERNAL-IP>` — the app should be live
 
 ---
 
 ## Submitting Your Work
 
-See `Acceptance-Exercise-3.md` for what to include and how to submit.
+See `SUBMISSION.md` for what to include and how to submit.
 
 ---
 
 ## Hints
 
-- `--dry-run=client -o yaml | kubectl apply -f -` is idempotent — safe to run on every push. It creates the secret if it doesn't exist, updates it if it does.
-- `APP_TITLE`, `VITE_APP_TITLE`, and `PORT` come from GitHub **Variables** (not Secrets) because they are not sensitive — they are visible in logs, which is fine.
-- `APP_USERNAME`, `APP_PASSWORD`, and `API` come from GitHub **Secrets** — they are masked in all logs.
-- The Terraform job stores secrets in Key Vault via `TF_VAR_*`. The deploy job injects them into the cluster directly from GitHub Secrets. Both refer to the same values — Key Vault is the durable store; the pipeline is the delivery mechanism.
-- If the deploy job fails at `kubectl create secret` with a credential error, check that all six `env` values (`APP_TITLE`, `APP_USERNAME`, `APP_PASSWORD`, `API`, `VITE_APP_TITLE`, `PORT`) are set in GitHub Secrets/Variables.
-- `YOUR_REGISTRY_PATH:v1` in the manifest is the placeholder that `sed` replaces with the real SHA-tagged image. Do not change this string — it must match exactly.
+- `--dry-run=client -o yaml | kubectl apply -f -` is idempotent — creates the secret if it doesn't exist, updates it if it does. Safe on every push.
+- `APP_TITLE`, `VITE_APP_TITLE`, and `PORT` come from GitHub **Variables** — not sensitive, visible in logs.
+- `APP_USERNAME`, `APP_PASSWORD`, and `API` come from GitHub **Secrets** — masked in all logs.
+- `TF_VAR_resource_group_name` and `TF_VAR_aks_cluster_name` are GitHub **Variables** and are reused in the deploy job to get AKS credentials — no duplication, same source of truth.
+- `REGISTRY_IMAGE_PLACEHOLDER` must match exactly in the manifest — the `sed` command targets this string precisely.
+- If `terraform apply` fails on Key Vault secrets with a permissions error, wait 60 seconds and re-run — RBAC propagation takes a moment.
+- Do not commit secrets — all credentials in GitHub Secrets, all non-sensitive config in GitHub Variables.
