@@ -375,6 +375,40 @@ Nothing sensitive is in any committed file at any point in this chain.
 
 ---
 
+## ⚠️ Important — What the App Actually Reads From
+
+The app does **not** talk to Azure Key Vault directly. It reads from **Kubernetes Secrets**, exactly as it did in Exercise 1 on minikube. Nothing changes in the application code between Exercise 1 and Exercise 3.
+
+Here is the actual flow:
+
+```
+Key Vault
+  └─(Terraform stores values here once)
+  └─(pipeline reads values on each deploy)
+        │
+        ▼
+  GitHub Actions runner
+        │  kubectl create secret generic taskline-secrets
+        ▼
+  Kubernetes Secret in AKS
+        │  secretKeyRef in deployment.yaml
+        ▼
+  Pod environment variables
+        │
+        ▼
+  App reads process.env.APP_PASSWORD etc.
+```
+
+**Key Vault's role in this exercise is:**
+
+- **Durability** — if the AKS cluster is destroyed and recreated, the secret values survive in Key Vault. In Exercise 1, if you lost the cluster you would have to remember and retype every value manually.
+- **Auditability** — every read and write to Key Vault is logged in Azure. You know who accessed a secret and when.
+- **Single source of truth** — to rotate a password, you update it once in Key Vault. Redeploy and the new value flows through the pipeline into the cluster automatically.
+
+The Kubernetes Secret is a delivery mechanism, not a vault. Key Vault is the vault.
+
+---
+
 ## Dockerfile
 
 ```dockerfile
