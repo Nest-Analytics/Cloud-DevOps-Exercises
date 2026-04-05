@@ -17,17 +17,10 @@ When it is working, pushing a code change to `main` automatically results in a l
 
 ## No Hardcoded Values — How This Exercise Is Structured
 
-Nothing sensitive or environment-specific is hardcoded in any file. Everything flows from GitHub Secrets and Variables. This means:
+Nothing sensitive or environment-specific is hardcoded in any file. Everything flows from GitHub Secrets and Variables:
 
-- You can change any resource name by updating a variable — no file edits
-- Nothing sensitive ever touches the repository
-- The same files work for any team member or environment
-
-Two mechanisms make this work:
-
-**`TF_VAR_*` environment variables** — any env var prefixed `TF_VAR_` is automatically read by Terraform as the value for the matching input variable. No `-var` flags needed in `plan` or `apply`.
-
-**`-backend-config` flags at `terraform init`** — the `backend "azurerm"` block in `main.tf` is intentionally empty. Connection details are passed as flags at init time, sourced from GitHub Secrets. Nothing about the backend is in any committed file.
+- **`TF_VAR_*` environment variables** — picked up automatically by Terraform as input variable values. No `-var` flags needed in `plan` or `apply`.
+- **`-backend-config` flags at `terraform init`** — the `backend "azurerm"` block in `main.tf` is intentionally empty. Connection details are passed as flags at init time from GitHub Secrets.
 
 ---
 
@@ -58,13 +51,10 @@ Go to your repository → **Settings → Secrets and variables → Actions**.
 | `DOCKERHUB_USERNAME` | Docker Hub username — required if using Docker Hub |
 | `DOCKERHUB_TOKEN` | Docker Hub access token — required if using Docker Hub |
 | `ACR_LOGIN_SERVER` | ACR login server — required if using ACR |
-| `APP_USERNAME` | Taskline app username |
-| `APP_PASSWORD` | Taskline app password |
-| `API` | Taskline API key |
 
 ### Variables (non-sensitive — visible in logs, that is fine)
 
-Go to the **Variables tab** (not Secrets).
+Go to the **Variables tab**.
 
 | Variable name | What it contains |
 |---|---|
@@ -74,9 +64,6 @@ Go to the **Variables tab** (not Secrets).
 | `TF_VAR_location` | Azure region, e.g. `westeurope` |
 | `TF_VAR_aks_cluster_name` | AKS cluster name, e.g. `aks-taskline-learn` |
 | `TF_VAR_acr_name` | ACR name if using ACR — leave empty otherwise |
-| `APP_TITLE` | `Taskline` |
-| `VITE_APP_TITLE` | `Taskline` |
-| `PORT` | `3000` |
 
 **Create the Azure service principal:**
 
@@ -94,11 +81,9 @@ The output JSON gives you `clientId`, `clientSecret`, `subscriptionId`, and `ten
 
 ## ⚠️ Before You Start — Set Up the Terraform Remote State Backend
 
-Each pipeline run starts on a fresh runner with no memory of previous runs. Without remote state, Terraform cannot tell what it already created and will try to recreate everything on every push. Create the state storage once manually before your first pipeline run.
+Each pipeline run starts on a fresh runner with no memory of previous runs. Without remote state, Terraform cannot tell what already exists. Create the storage once manually before your first pipeline run.
 
 ### Step 1 — Create a resource group for state
-
-Keep it separate from app infrastructure so it is never accidentally destroyed.
 
 ```bash
 az group create \
@@ -107,8 +92,6 @@ az group create \
 ```
 
 ### Step 2 — Create the storage account
-
-Name must be globally unique, 3–24 characters, lowercase letters and numbers only.
 
 ```bash
 az storage account create \
@@ -171,8 +154,6 @@ terraform init \
   -backend-config="key=tasklineapp.terraform.tfstate"
 ```
 
-If this completes without errors the pipeline will work.
-
 ---
 
 ## Repository Structure
@@ -203,12 +184,11 @@ tasklineapp/
 
 ## Part 1 — AKS Kubernetes Manifests
 
-Three things change from the minikube manifests in Exercise 1:
+Two things change from the minikube manifests in Exercise 1:
 
 1. `imagePullPolicy: Never` is removed — AKS pulls from the registry
-2. `imagePullSecrets` is added — required for GHCR and private registries
+2. `imagePullSecrets` is added — required for GHCR and other private registries
 3. Service type changes from `NodePort` to `LoadBalancer`
-4. All six env vars are wired from the `taskline-secrets` Kubernetes Secret — the pipeline creates this secret before applying the manifests
 
 ### `k8s/aks/deployment.yaml`
 
@@ -238,41 +218,6 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
-          env:
-            - name: APP_TITLE
-              valueFrom:
-                secretKeyRef:
-                  name: taskline-secrets
-                  key: APP_TITLE
-            - name: APP_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: taskline-secrets
-                  key: APP_USERNAME
-            - name: APP_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: taskline-secrets
-                  key: APP_PASSWORD
-            - name: API
-              valueFrom:
-                secretKeyRef:
-                  name: taskline-secrets
-                  key: API
-            - name: VITE_APP_TITLE
-              valueFrom:
-                secretKeyRef:
-                  name: taskline-secrets
-                  key: VITE_APP_TITLE
-            - name: PORT
-              valueFrom:
-                secretKeyRef:
-                  name: taskline-secrets
-                  key: PORT
-          volumeMounts:
-            - name: taskline-secrets-volume
-              mountPath: /etc/secrets
-              readOnly: true
           resources:
             requests:
               cpu: "100m"
@@ -280,13 +225,7 @@ spec:
             limits:
               cpu: "250m"
               memory: "256Mi"
-      volumes:
-        - name: taskline-secrets-volume
-          secret:
-            secretName: taskline-secrets
 ```
-
-> `imagePullSecrets: ghcr-secret` — the pipeline creates this secret in AKS before applying manifests. If you are using Docker Hub with a public image or ACR with the `AcrPull` role, this entry is not strictly required but does no harm if present.
 
 ### `k8s/aks/service.yaml`
 
@@ -310,8 +249,6 @@ spec:
 ## Part 2 — Terraform
 
 ### `terraform/variables.tf`
-
-Key variables have no defaults — they must be supplied explicitly via `TF_VAR_*` env vars. This prevents silent deployment to the wrong resource group.
 
 ```hcl
 variable "resource_group_name" {
@@ -353,8 +290,7 @@ terraform {
     }
   }
 
-  # Empty backend block — all connection details are passed via
-  # -backend-config flags at terraform init time.
+  # Empty — connection details passed via -backend-config flags at terraform init
   backend "azurerm" {}
 }
 
@@ -429,8 +365,6 @@ output "acr_login_server" {
 
 ## Part 3 — GitHub Actions Workflow
 
-Create `.github/workflows/deploy.yml`:
-
 ```yaml
 name: Build, Push, Provision and Deploy
 
@@ -479,10 +413,6 @@ jobs:
       - name: Generate image tag
         id: tag
         run: |
-          # REGISTRY_PATH is a GitHub Variable set to your full image path prefix:
-          # GHCR:       ghcr.io/YOUR_GITHUB_USERNAME/tasklineapp
-          # Docker Hub: YOUR_DOCKERHUB_USERNAME/tasklineapp
-          # ACR:        acrtasklineapp.azurecr.io/tasklineapp
           IMAGE_TAG="${{ vars.REGISTRY_PATH }}:${{ github.sha }}"
           echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
 
@@ -501,13 +431,10 @@ jobs:
     needs: build-and-push
 
     env:
-      # ARM_* authenticates Terraform to Azure for resource provisioning
-      # and remote state blob access
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      # TF_VAR_* are picked up automatically by Terraform as variable values
       TF_VAR_resource_group_name: ${{ vars.TF_VAR_resource_group_name }}
       TF_VAR_location: ${{ vars.TF_VAR_location }}
       TF_VAR_aks_cluster_name: ${{ vars.TF_VAR_aks_cluster_name }}
@@ -523,7 +450,6 @@ jobs:
       - name: Terraform Init
         working-directory: terraform
         run: |
-          # Backend details come from GitHub Secrets — nothing hardcoded in main.tf
           terraform init \
             -backend-config="resource_group_name=${{ secrets.TF_STATE_RESOURCE_GROUP }}" \
             -backend-config="storage_account_name=${{ secrets.TF_STATE_STORAGE_ACCOUNT }}" \
@@ -569,31 +495,14 @@ jobs:
       - name: Create GHCR image pull secret
         if: vars.REGISTRY == 'ghcr'
         run: |
-          # Creates the ghcr-secret referenced in the deployment manifest.
-          # Idempotent — safe to run on every push.
           kubectl create secret docker-registry ghcr-secret \
             --docker-server=ghcr.io \
             --docker-username=${{ github.actor }} \
             --docker-password=${{ secrets.GHCR_TOKEN }} \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Create or update Kubernetes app secret
-        run: |
-          # Creates taskline-secrets referenced by secretKeyRef in the manifest.
-          # Values come from GitHub Secrets and Variables — nothing hardcoded.
-          # Idempotent — safe to run on every push.
-          kubectl create secret generic taskline-secrets \
-            --from-literal=APP_TITLE="${{ vars.APP_TITLE }}" \
-            --from-literal=APP_USERNAME="${{ secrets.APP_USERNAME }}" \
-            --from-literal=APP_PASSWORD="${{ secrets.APP_PASSWORD }}" \
-            --from-literal=API="${{ secrets.API }}" \
-            --from-literal=VITE_APP_TITLE="${{ vars.VITE_APP_TITLE }}" \
-            --from-literal=PORT="${{ vars.PORT }}" \
-            --dry-run=client -o yaml | kubectl apply -f -
-
       - name: Update image in deployment manifest
         run: |
-          # Replace REGISTRY_IMAGE_PLACEHOLDER with the real SHA-tagged image from Job 1
           sed -i "s|REGISTRY_IMAGE_PLACEHOLDER|${{ needs.build-and-push.outputs.image_tag }}|g" \
             k8s/aks/deployment.yaml
 
@@ -627,69 +536,31 @@ jobs:
 When you push to `main`:
 
 1. **build-and-push** — the `REGISTRY` variable selects the correct login step; `REGISTRY_PATH` constructs the full image tag with the commit SHA; image is built for `linux/amd64` and pushed; the full tag is passed as a job output
-2. **terraform** — `ARM_*` secrets authenticate to Azure; `TF_VAR_*` variables supply all resource names automatically; `terraform init` connects to the remote state via `-backend-config` flags; `plan` and `apply` provision or update the cluster. First run takes 5–8 minutes; subsequent runs are fast
-3. **deploy** — logs in to Azure; gets AKS credentials; creates `ghcr-secret` if using GHCR; creates or updates `taskline-secrets` with all six app values; replaces `REGISTRY_IMAGE_PLACEHOLDER` in the manifest with the real image tag; applies both manifests; waits for the rollout; prints the external IP
+2. **terraform** — authenticates to Azure; `TF_VAR_*` variables supply all resource names; `terraform init` connects to remote state via `-backend-config` flags; provisions or updates the AKS cluster. First run takes 5–8 minutes; subsequent runs are fast
+3. **deploy** — logs in to Azure; gets AKS credentials; creates `ghcr-secret` if using GHCR so the cluster can pull the image; replaces `REGISTRY_IMAGE_PLACEHOLDER` with the real image tag; applies both manifests; waits for rollout; prints the external IP
 
 ---
 
 ## Verifying It Worked
 
 1. Repository → **Actions** tab → latest workflow run → all three jobs green
-2. In the **deploy** job logs → `Get external IP` step → copy the IP
+2. **deploy** job logs → `Get external IP` step → copy the IP
 3. Open `http://<EXTERNAL-IP>` — the app should be live
 
 ---
 
 ## Submitting Your Work
 
-Push all of the following to `main`:
-
-```
-├── Dockerfile
-├── .dockerignore
-├── k8s/
-│   ├── deployment.yaml         ← minikube (Exercise 1)
-│   ├── service.yaml            ← minikube (Exercise 1)
-│   └── aks/
-│       ├── deployment.yaml     ← AKS (this exercise)
-│       └── service.yaml        ← AKS (this exercise)
-├── terraform/
-│   ├── main.tf
-│   ├── variables.tf
-│   └── outputs.tf
-└── .github/
-    └── workflows/
-        └── deploy.yml
-```
-
-Add an Exercise 3 section to `SUBMISSION.md`:
-
-```markdown
-## Exercise 3 Submission
-
-- **GitHub repo URL:** https://github.com/YOUR_USERNAME/YOUR_REPO
-- **Registry used:** GHCR / Docker Hub / ACR
-- **Full image reference:** YOUR_REGISTRY/tasklineapp:SHA
-- **Terraform state storage account:** YOURTFSTATESTORAGE
-- **Resource group used:** learn-rg
-- **AKS cluster name:** aks-taskline-learn
-- **Live app URL:** http://EXTERNAL_IP
-- **Successful Actions run URL:** https://github.com/YOUR_USERNAME/YOUR_REPO/actions/runs/XXXXXXX
-- **Screenshot:** screenshot-aks.png
-```
-
-Include `screenshot-aks.png` — browser screenshot of the app at the AKS external IP.
+See `SUBMISSION.md` for what to include and how to submit.
 
 ---
 
 ## Hints
 
-- **`container_name=tfstate1`** — this must match the container you created in Step 3 of the backend setup. If you used a different name, update both places to match.
-- **`REGISTRY_IMAGE_PLACEHOLDER` must be exact** — the `sed` command targets this exact string. Do not change it in the manifest.
-- **`TF_VAR_*` env vars are automatic** — Terraform picks them up without any `-var` flags in `plan` or `apply`.
-- **First run takes time** — AKS cluster creation takes 5–8 minutes. The pipeline will appear to hang at Terraform Apply — this is normal.
-- **Subsequent runs are fast** — Terraform compares state and only changes what has changed. If the cluster exists, apply completes in seconds.
+- **`container_name=tfstate1`** must match the container you created in the backend setup. Check both places if `terraform init` fails.
+- **`REGISTRY_IMAGE_PLACEHOLDER` must be exact** — the `sed` command targets this string precisely. Do not change it in the manifest.
+- **First Terraform run takes 5–8 minutes** — AKS cluster creation is slow. The pipeline will appear to hang at Apply — this is normal.
+- **Subsequent runs are fast** — Terraform only changes what has changed. If the cluster exists, apply completes in seconds.
 - **`Storage Blob Data Contributor` is separate from `Contributor`** — both are required. Missing the blob role gives a 403 at `terraform init`.
-- **Both Kubernetes secrets are idempotent** — `--dry-run=client -o yaml | kubectl apply -f -` creates if missing, updates if present. Safe on every push.
-- **GHCR packages must be public or the pull secret must exist** — the pipeline creates `ghcr-secret` before applying manifests, so private packages work. If you make the package public, the pull secret does no harm.
-- **Do not commit secrets** — all credentials in GitHub Secrets, all non-sensitive config in GitHub Variables. Nothing sensitive in any committed file.
+- **`ghcr-secret` is created by the pipeline** — the manifest references it under `imagePullSecrets`. If you are using Docker Hub with a public image, this entry does no harm but is not required.
+- **Do not commit secrets** — all credentials in GitHub Secrets, all non-sensitive config in GitHub Variables.
