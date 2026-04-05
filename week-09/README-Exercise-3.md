@@ -4,7 +4,7 @@
 
 ## Overview
 
-This exercise is the full integration of everything across Weeks 7–9: Docker (containerised image), Terraform (infrastructure as code), Kubernetes (AKS manifests from Week 8), GitHub Actions (CI/CD pipeline), and now Key Vault (secrets managed securely). You are not starting from scratch — you are extending the working AKS deployment from Week 8 to handle secrets properly.
+This exercise is the full integration of everything across Weeks 7–8: Docker (containerised image), Terraform (infrastructure as code), Kubernetes (AKS manifests from Week 8), GitHub Actions (CI/CD pipeline), and now Key Vault (secrets managed securely). You are not starting from scratch — you are extending the working AKS deployment from Week 8 to handle secrets properly.
 
 You will wire the GitHub Actions pipeline to inject secrets into AKS as a Kubernetes Secret on every deployment. The complete flow on every push to `main`:
 
