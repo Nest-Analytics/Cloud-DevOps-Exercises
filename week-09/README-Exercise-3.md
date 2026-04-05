@@ -4,7 +4,7 @@
 
 ## Overview
 
-This exercise is the full integration of everything across Weeks 7–8: Docker (containerised image), Terraform (infrastructure as code), Kubernetes (AKS manifests from Week 8), GitHub Actions (CI/CD pipeline), and now Key Vault (secrets managed securely). You are not starting from scratch — you are extending the working AKS deployment from Week 8 to handle secrets properly.
+This exercise is the full integration of everything across Weeks 7–9: Docker (containerised image), Terraform (infrastructure as code), Kubernetes (AKS manifests from Week 8), GitHub Actions (CI/CD pipeline), and now Key Vault (secrets managed securely). You are not starting from scratch — you are extending the working AKS deployment from Week 8 to handle secrets properly.
 
 You will wire the GitHub Actions pipeline to inject secrets into AKS as a Kubernetes Secret on every deployment. The complete flow on every push to `main`:
 
@@ -44,7 +44,10 @@ Go to your repository → **Settings → Secrets and variables → Actions**.
 | `TF_STATE_RESOURCE_GROUP` | Resource group containing the Terraform state storage account |
 | `TF_STATE_STORAGE_ACCOUNT` | Storage account name for Terraform remote state |
 | `TF_STATE_CONTAINER` | Blob container name for Terraform state, e.g. `tfstate1` |
-| `GHCR_TOKEN` | GitHub PAT with `read/write:packages` |
+| `GHCR_TOKEN` | GitHub PAT with `read/write:packages` — required if using GHCR |
+| `DOCKERHUB_USERNAME` | Docker Hub username — required if using Docker Hub |
+| `DOCKERHUB_TOKEN` | Docker Hub access token — required if using Docker Hub |
+| `ACR_LOGIN_SERVER` | ACR login server — required if using ACR |
 | `APP_USERNAME` | Taskline app username |
 | `APP_PASSWORD` | Taskline app password |
 | `API` | Taskline API key |
@@ -55,6 +58,8 @@ Go to the **Variables tab**.
 
 | Variable name | What it contains |
 |---|---|
+| `REGISTRY` | `ghcr`, `dockerhub`, or `acr` — controls which registry login step runs |
+| `REGISTRY_PATH` | Full image path prefix, e.g. `ghcr.io/YOUR_USERNAME/tasklineapp` |
 | `TF_VAR_resource_group_name` | Azure resource group, e.g. `learn-rg` |
 | `TF_VAR_aks_cluster_name` | AKS cluster name, e.g. `aks-taskline-learn` |
 | `TF_VAR_location` | Azure region, e.g. `westeurope` |
@@ -87,7 +92,7 @@ spec:
         app: tasklineapp
     spec:
       imagePullSecrets:
-        - name: ghcr-secret
+        - name: ghcr-secret    # only needed if using GHCR — pipeline creates this conditionally
       containers:
         - name: tasklineapp
           # Placeholder — replaced by the pipeline sed command at deploy time
@@ -188,7 +193,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Log in to ACR
+        if: vars.REGISTRY == 'acr'
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.AZURE_CLIENT_ID }}
+          password: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+      - name: Log in to Docker Hub
+        if: vars.REGISTRY == 'dockerhub'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Log in to GHCR
+        if: vars.REGISTRY == 'ghcr'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -198,7 +219,11 @@ jobs:
       - name: Generate image tag
         id: tag
         run: |
-          IMAGE_TAG="ghcr.io/${{ github.actor }}/tasklineapp:${{ github.sha }}"
+          # REGISTRY_PATH is a GitHub Variable — set it to your full image path prefix:
+          # GHCR:       ghcr.io/YOUR_GITHUB_USERNAME/tasklineapp
+          # Docker Hub: YOUR_DOCKERHUB_USERNAME/tasklineapp
+          # ACR:        acrtasklineapp.azurecr.io/tasklineapp
+          IMAGE_TAG="${{ vars.REGISTRY_PATH }}:${{ github.sha }}"
           echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
 
       - name: Build and push image
@@ -284,6 +309,7 @@ jobs:
             --overwrite-existing
 
       - name: Create GHCR image pull secret
+        if: vars.REGISTRY == 'ghcr'
         run: |
           kubectl create secret docker-registry ghcr-secret \
             --docker-server=ghcr.io \
