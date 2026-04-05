@@ -1,4 +1,4 @@
-# Exercise 3 — Deploy to AKS with Terraform and GitHub Actions | Kubernetes: Terraform + GitHub Actions + AKS**
+# Exercise 3 — Deploy to AKS with Terraform and GitHub Actions | Kubernetes: Terraform + GitHub Actions + AKS
 
 ---
 
