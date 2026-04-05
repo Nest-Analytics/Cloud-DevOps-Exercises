@@ -428,7 +428,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ACR login — runs only when REGISTRY variable is set to 'acr'
       - name: Log in to ACR
         if: vars.REGISTRY == 'acr'
         uses: azure/docker-login@v1
@@ -437,7 +436,6 @@ jobs:
           username: ${{ secrets.AZURE_CLIENT_ID }}
           password: ${{ secrets.AZURE_CLIENT_SECRET }}
 
-      # Docker Hub login — runs only when REGISTRY variable is set to 'dockerhub'
       - name: Log in to Docker Hub
         if: vars.REGISTRY == 'dockerhub'
         uses: docker/login-action@v3
@@ -445,7 +443,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # GHCR login — runs only when REGISTRY variable is set to 'ghcr'
       - name: Log in to GHCR
         if: vars.REGISTRY == 'ghcr'
         uses: docker/login-action@v3
@@ -457,10 +454,6 @@ jobs:
       - name: Generate image tag
         id: tag
         run: |
-          # REGISTRY_PATH is a GitHub Variable — set it to your full image prefix:
-          # ACR:        acrtasklineapp.azurecr.io/tasklineapp
-          # Docker Hub: YOUR_DOCKERHUB_USERNAME/tasklineapp
-          # GHCR:       ghcr.io/YOUR_GITHUB_USERNAME/tasklineapp
           IMAGE_TAG="${{ vars.REGISTRY_PATH }}:${{ github.sha }}"
           echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
 
@@ -479,15 +472,10 @@ jobs:
     needs: build-and-push
 
     env:
-      # ARM_* variables authenticate Terraform to Azure for both
-      # resource provisioning and remote state blob access
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-
-      # TF_VAR_* variables are automatically read by Terraform as input variable values.
-      # These come from GitHub Variables (non-sensitive config) so they are visible in logs.
       TF_VAR_resource_group_name: ${{ vars.TF_VAR_resource_group_name }}
       TF_VAR_location: ${{ vars.TF_VAR_location }}
       TF_VAR_aks_cluster_name: ${{ vars.TF_VAR_aks_cluster_name }}
@@ -503,13 +491,10 @@ jobs:
       - name: Terraform Init
         working-directory: terraform
         run: |
-          # Backend connection details are passed as -backend-config flags.
-          # The backend "azurerm" block in main.tf is empty — all config comes from here.
-          # TF_STATE_RESOURCE_GROUP and TF_STATE_STORAGE_ACCOUNT come from GitHub Secrets.
           terraform init \
             -backend-config="resource_group_name=${{ secrets.TF_STATE_RESOURCE_GROUP }}" \
             -backend-config="storage_account_name=${{ secrets.TF_STATE_STORAGE_ACCOUNT }}" \
-            -backend-config="container_name=tfstate" \
+            -backend-config="container_name=tfstate1" \
             -backend-config="key=tasklineapp.terraform.tfstate"
 
       - name: Terraform Plan
@@ -543,16 +528,22 @@ jobs:
 
       - name: Get AKS credentials
         run: |
-          # Resource group and cluster name come from GitHub Variables — no hardcoding
           az aks get-credentials \
             --resource-group ${{ vars.TF_VAR_resource_group_name }} \
             --name ${{ vars.TF_VAR_aks_cluster_name }} \
             --overwrite-existing
 
+      - name: Create GHCR image pull secret
+        if: vars.REGISTRY == 'ghcr'
+        run: |
+          kubectl create secret docker-registry ghcr-secret \
+            --docker-server=ghcr.io \
+            --docker-username=${{ github.actor }} \
+            --docker-password=${{ secrets.GHCR_TOKEN }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Update image in deployment manifest
         run: |
-          # Replace the placeholder in the manifest with the real SHA-tagged image
-          # from Job 1. REGISTRY_PATH is a GitHub Variable.
           sed -i "s|REGISTRY_IMAGE_PLACEHOLDER|${{ needs.build-and-push.outputs.image_tag }}|g" \
             k8s/aks/deployment.yaml
 
