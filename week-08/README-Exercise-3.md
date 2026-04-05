@@ -553,7 +553,7 @@ When you push to `main`:
 
 ## Submitting Your Work
 
-See `SUBMISSION.md` for what to include and how to submit.
+See `Acceptance-Exercise-3.md` for what to include and how to submit.
 
 ---
 
