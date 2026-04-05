@@ -1,4 +1,4 @@
-# Exercise 3 — Deploy to AKS with Terraform and GitHub Actions | Kubernetes: Terraform + GitHub Actions + AKS
+# Exercise 3 — Deploy to AKS with Terraform and GitHub Actions | Kubernetes: Terraform + GitHub Actions + AKS**
 
 ---
 
@@ -47,6 +47,7 @@ Go to your repository → **Settings → Secrets and variables → Actions**.
 | `AZURE_TENANT_ID` | Your Azure tenant ID |
 | `TF_STATE_RESOURCE_GROUP` | Resource group containing the Terraform state storage account |
 | `TF_STATE_STORAGE_ACCOUNT` | Storage account name for Terraform remote state |
+| `TF_STATE_CONTAINER` | Blob container name for Terraform state, e.g. `tfstate1` |
 | `GHCR_TOKEN` | GitHub PAT with `read/write:packages` — required if using GHCR |
 | `DOCKERHUB_USERNAME` | Docker Hub username — required if using Docker Hub |
 | `DOCKERHUB_TOKEN` | Docker Hub access token — required if using Docker Hub |
@@ -136,6 +137,7 @@ az role assignment create \
 |---|---|
 | `TF_STATE_RESOURCE_GROUP` | `rg-tfstate` |
 | `TF_STATE_STORAGE_ACCOUNT` | your actual storage account name |
+| `TF_STATE_CONTAINER` | `tfstate1` (or whatever name you used in Step 3) |
 
 ### Step 6 — Verify locally (recommended)
 
@@ -150,7 +152,7 @@ export ARM_TENANT_ID=YOUR_TENANT_ID
 terraform init \
   -backend-config="resource_group_name=rg-tfstate" \
   -backend-config="storage_account_name=YOURTFSTATESTORAGE" \
-  -backend-config="container_name=tfstate1" \
+  -backend-config="container_name=YOUR_CONTAINER_NAME" \
   -backend-config="key=tasklineapp.terraform.tfstate"
 ```
 
@@ -453,7 +455,7 @@ jobs:
           terraform init \
             -backend-config="resource_group_name=${{ secrets.TF_STATE_RESOURCE_GROUP }}" \
             -backend-config="storage_account_name=${{ secrets.TF_STATE_STORAGE_ACCOUNT }}" \
-            -backend-config="container_name=tfstate1" \
+            -backend-config="container_name=${{ secrets.TF_STATE_CONTAINER }}" \
             -backend-config="key=tasklineapp.terraform.tfstate"
 
       - name: Terraform Plan
@@ -557,7 +559,7 @@ See `SUBMISSION.md` for what to include and how to submit.
 
 ## Hints
 
-- **`container_name=tfstate1`** must match the container you created in the backend setup. Check both places if `terraform init` fails.
+- **`TF_STATE_CONTAINER` must match the container you created** — add it to GitHub Secrets with the exact name you used in Step 3. If they don't match, `terraform init` fails with a 404 container not found error.
 - **`REGISTRY_IMAGE_PLACEHOLDER` must be exact** — the `sed` command targets this string precisely. Do not change it in the manifest.
 - **First Terraform run takes 5–8 minutes** — AKS cluster creation is slow. The pipeline will appear to hang at Apply — this is normal.
 - **Subsequent runs are fast** — Terraform only changes what has changed. If the cluster exists, apply completes in seconds.
