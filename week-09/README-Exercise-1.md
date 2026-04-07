@@ -6,7 +6,7 @@
 
 You will create a Kubernetes Secret containing the Taskline app's config values, deploy the app to minikube using the provided manifests, and confirm it runs correctly. You will then delete the secret and redeploy to observe what breaks — and why.
 
-**Note that you will be using the same app but the week-09 branch**
+**Note that you will be using the same app but the week-09 branch for this week's exercises - https://github.com/Nest-Analytics/taskline-app.git**
 
 ---
 
