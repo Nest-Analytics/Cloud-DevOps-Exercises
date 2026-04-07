@@ -1,4 +1,6 @@
-# Exercise 3 — Full Pipeline: Key Vault → Kubernetes Secret → AKS | Security & IAM: End-to-End Secrets Flow
+# Exercise 3 — Full Pipeline: Key Vault → Kubernetes Secret → AKS
+
+**Week 9 | Security & IAM: End-to-End Secrets Flow**
 
 ---
 
@@ -164,6 +166,52 @@ spec:
       port: 80
       targetPort: 3000
 ```
+
+---
+
+## Part 3 — Local Terraform Run (Before Using the Pipeline)
+
+Before pushing to GitHub and triggering the pipeline, verify Terraform works locally. This catches configuration errors early.
+
+Create `terraform/terraform.tfvars` with your actual values:
+
+```hcl
+app_username = "your-username"
+app_password = "your-password"
+api_key      = "your-api-key"
+```
+
+> **Add this file to `.gitignore` immediately.** It contains sensitive values and must never be committed.
+
+Add to `.gitignore`:
+
+```
+terraform/terraform.tfvars
+terraform/.terraform/
+terraform/tfplan
+```
+
+Then run locally:
+
+```bash
+cd terraform
+
+export ARM_CLIENT_ID=YOUR_CLIENT_ID
+export ARM_CLIENT_SECRET=YOUR_CLIENT_SECRET
+export ARM_SUBSCRIPTION_ID=YOUR_SUBSCRIPTION_ID
+export ARM_TENANT_ID=YOUR_TENANT_ID
+
+terraform init \
+  -backend-config="resource_group_name=YOUR_TFSTATE_RG" \
+  -backend-config="storage_account_name=YOUR_TFSTATE_STORAGE" \
+  -backend-config="container_name=YOUR_CONTAINER_NAME" \
+  -backend-config="key=tasklineapp.terraform.tfstate"
+
+terraform plan
+terraform apply
+```
+
+Terraform will pick up the sensitive values from `terraform.tfvars` automatically. Once you confirm it applies cleanly locally, the pipeline will work the same way — it just uses `TF_VAR_*` environment variables from GitHub Secrets instead of the `.tfvars` file.
 
 ---
 
