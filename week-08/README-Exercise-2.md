@@ -166,7 +166,7 @@ Push the following to your GitHub repository:
 SUBMISSION.md       ← updated with Exercise 2 section
 ```
 
-**Add an Exercise 2 section to `SUBMISSION.md`:**
+**Add an Exercise 2 section to `Acceptance-Exercise-2.md`:**
 
 ```markdown
 ## Exercise 2 Submission
