@@ -369,7 +369,7 @@ Push all of the following to your `main` branch:
         └── deploy.yml
 ```
 
-Also include in your repository root a file named `SUBMISSION.md` with:
+Also include in your repository root a file named `Acceptance-Exercise.md` with:
 
 ```markdown
 ## Exercise 2 Submission
