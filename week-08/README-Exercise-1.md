@@ -205,7 +205,7 @@ screenshot-local.png        ← browser screenshot showing the app at the miniku
 SUBMISSION.md
 ```
 
-**`SUBMISSION.md`** should contain:
+**`Acceptance-Exercise-1.md`** should contain:
 
 ```markdown
 ## Exercise 1 Submission
