@@ -8,6 +8,8 @@ This capstone brings together everything from the course. You are provided with 
 
 You do not modify the application code. Your work is entirely in the infrastructure, pipeline, manifests, monitoring, and secrets management.
 
+You will be using the capstone-project branch on this repo - https://github.com/Nest-Analytics/taskline-app.git
+
 **Path 1 is required for everyone. For the cloud path, choose either Path 2 or Path 3.**
 
 > **No hardcoding.** GitHub Secrets for sensitive values, GitHub Variables for non-sensitive config, `TF_VAR_*` for Terraform variables, `-backend-config` flags for backend connection details. No exceptions.
